@@ -14,7 +14,8 @@ export const verifyOtp = catchAsync(async (req, res, next) => {
         console.log(userOtp?.expiresAt)
         return res.status(400).json({ ok: false, expired: true });
     }
-    const user = await User.create({email});
+    const user = await User.findOne({email});
+    if(!user) await User.create({email});
     const token = await jwt.sign({email,id:user._id},process.env.JWT_SECRET,{expiresIn:'10d'});
     res.cookie('jwt',token).status(200).json({jwt:token});
 });
