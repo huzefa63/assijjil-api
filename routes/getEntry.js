@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllEntryOfJuz, getYearlyAvgJadeed, getYearlyAvgJuz, handleGetJadeed, handleGetWeeklyJuzhaali, handleGetWeeklyTasmee } from '../controller/getEntry.js';
+import { getAllEntryOfJuz, getJuzAvgChartsData, getJuzPassFailChartsData, getYearlyAvgJadeed, getYearlyAvgJuz, handleGetJadeed, handleGetWeeklyJuzhaali, handleGetWeeklyTasmee } from '../controller/getEntry.js';
 import { protectRoute } from '../controller/auth.js';
 import { handleGetWeeklyMurajaah } from '../controller/getEntry.js';
 
@@ -12,5 +12,7 @@ route.get('/weeklyJuzhaali',protectRoute,handleGetWeeklyJuzhaali);
 route.get('/weeklyTasmee',protectRoute,handleGetWeeklyTasmee);
 route.get('/yearlyAvgJadeed',protectRoute,getYearlyAvgJadeed);
 route.get('/juz/:juz',protectRoute,getAllEntryOfJuz);
+route.get('/juzAvgChartsData/:juz',protectRoute,getJuzAvgChartsData);
+route.get('/juzPassFailChartsData/:juz',protectRoute,getJuzPassFailChartsData);
 
 export default route;

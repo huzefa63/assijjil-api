@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 
 export const handleGetJadeed = catchAsync(async (req, res, next) => {
   const id  = req.user;
+  console.log(id)
   const user = await User.findById(id);
   if(!user) return res.status(400).json({message:'user not found'})
   let jadeed = { surah: "", ayah: "" };
@@ -158,7 +159,7 @@ export const getYearlyAvgJadeed = catchAsync(async (req, res, next) => {
       $project: {
         _id: 0,
         month: "$_id",
-        pages: { $divide: ["$lines", 15] },
+        pages: { $round: { $divide: ["$lines", 15] } },
         monthNumber: 1,
       },
     },
@@ -208,7 +209,7 @@ export const getAllEntryOfJuz = catchAsync(async (req, res, next) => {
   const {juz } = req.params;
   const {page} = req.query;
   const id = req.user;
-  console.log(typeof juz)
+  console.log('ehh');
   const skip = (page - 1) * 10;  
   const today = new Date();
   const current = new Date();
@@ -245,18 +246,96 @@ export const getAllEntryOfJuz = catchAsync(async (req, res, next) => {
     },
   ]);
 
-  // const totalRes = await Murajaah.countDocuments({
-  //   userId: new mongoose.Types.ObjectId(id),
-  //   date: { $gte: current },
-  //   juz:juz
-  // });
+  const totalRes = await Murajaah.countDocuments({
+    userId: new mongoose.Types.ObjectId(id),
+    date: { $gte: current },
+    juz:juz
+  });
   const paginatedJuz = await Murajaah.find({
     userId:new mongoose.Types.ObjectId(id),
     date:{$gte:current},
     juz:juz
   }).limit(10).skip(skip).sort({date:1});
-  console.log(stats)
+  // console.log(stats)
   
   // console.log(finalRes)
   res.status(200).json({ ok: true, juz:paginatedJuz,totalRes:stats[0].timesRecited,stats });
 });
+
+export const getJuzPassFailChartsData = catchAsync(async (req,res,next) => {
+  const id = req.user;
+  const {juz} = req.params;
+  const data = await Murajaah.aggregate([
+    {
+      $match:{
+        userId:new mongoose.Types.ObjectId(id),
+        juz:Number(juz),
+      }
+    },
+    {
+      $group:{
+        _id:'$month',
+        timesPassed:{
+          $sum:{
+            $cond:[
+              {$gte:["$marks",7]},1,0
+            ]
+          }
+        },
+        timesFailed:{
+          $sum:{
+            $cond:[
+              {$lte:["$marks",6]},1,0
+            ]
+          }
+        },
+        monthNumber:{$first:'$monthNumber'}
+      }
+    },
+    {
+      $project:{
+        _id:0,
+        month:'$_id',
+        timesFailed:1,
+        timesPassed:1,
+        monthNumber:1
+      }
+    },
+    {
+      $sort:{monthNumber:1}
+    }
+  ])
+  console.log(data);
+  res.status(200).json({ok:true,data})
+})
+
+export const getJuzAvgChartsData = catchAsync(async (req,res,next) => {
+  const id = req.user;
+  const {juz} = req.params;
+  const data = await Murajaah.aggregate([
+    {
+      $match: {
+        userId: new mongoose.Types.ObjectId(id),
+        juz: Number(juz),
+      },
+    },
+    {
+      $group: {
+        _id: "$month",
+        marks: { $avg: "$marks" },
+        monthNumber: { $first: "$monthNumber" },
+      },
+    },
+    {
+      $project: {
+        month: "$_id",
+        marks:{$round:["$marks",1]},
+        monthNumber: 1,
+      },
+    },
+    {
+      $sort: { monthNumber: 1 },
+    },
+  ]);
+  res.status(200).json({ok:true,data})
+})
