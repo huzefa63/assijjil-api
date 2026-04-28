@@ -17,5 +17,5 @@ export const verifyOtp = catchAsync(async (req, res, next) => {
     const user = await User.findOne({email});
     if(!user) await User.create({email});
     const token = await jwt.sign({email,id:user._id},process.env.JWT_SECRET,{expiresIn:'10d'});
-    res.cookie('jwt',token).status(200).json({jwt:token});
+    res.cookie('jwt',token,{sameSite:'none',httpOnly:false}).status(200).json({jwt:token});
 });
